@@ -12,10 +12,6 @@ createRecipe = (req, res) => {
 
     const recipe = new Recipe(body)
 
-    if (!recipe) {
-        return res.status(400).json({ success: false, error: err })
-    }
-
     recipe
         .save()
         .then(() => {
