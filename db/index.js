@@ -1,8 +1,7 @@
 const mongoose = require('mongoose')
-const connectionString = require('./config.properties')
 
 mongoose
-    .connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true})
+    .connect(process.env.CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true})
     .catch(e => {
         console.error('Connection error', e.message)
     })
