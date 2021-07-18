@@ -1,9 +1,10 @@
 const mongoose = require("mongoose");
 
 const recipeSchema = new mongoose.Schema({ 
-    email: 'string',
-    title: 'string',
+    email: String,
+    title: String,
     ingredients: Array, 
-    instructions: 'string' });
+    instructions: String,
+    hasImages: Boolean });
 
 module.exports = mongoose.model('Recipe', recipeSchema)
