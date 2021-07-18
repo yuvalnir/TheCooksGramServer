@@ -10,8 +10,8 @@ const db = require('./db/index')
 const app = express()
 
 app.use(cors()) //should be changed in the future to a specific address
-app.use(bodyParser.json({ extended: true }));
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json({ limit: '50mb', extended: true }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }))
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'))
 
