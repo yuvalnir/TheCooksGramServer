@@ -1,5 +1,5 @@
 const Recipe = require('../models/recipeModel')
-const uploadToS3 = require('../helpers/uploadToS3')
+const {uploadToS3, getFromS3} = require('../helpers/s3Handler')
 
 createRecipe = async (req, res) => {
     const body = req.body
@@ -9,24 +9,30 @@ createRecipe = async (req, res) => {
     }
 
     const recipe = new Recipe({
-        email: body.email,
+        userId: body.userId,
         title: body.title,
         ingredients: body.ingredients, 
         instructions: body.instructions,
-        hasImages: false
+        hasImages: false,
+        imagesNames: []
     });
 
     /** Saving recipe to DB */
     try {
         await recipe.save()
+        console.log('Recipe created');
     } catch (error) {
+        console.log('Recipe not created');
         return res.status(400).json({error, message: 'Recipe not created!'})
     }
     /** Uploading images to AWS.S3 */
+    let namesArr = []
     try { 
+        body.images ? console.log('Theres images to upload') : console.log('No images to upload');
         if(body.images)
-            await uploadToS3(body.userId, recipe._id, body.images, 'recipes/')
+            namesArr = await uploadToS3(body.userId, recipe._id, body.images, 'recipes/')
     } catch (error) { //will add failure handling, and some retries in the future, maybe as a micro service
+        console.log('Recipe created, but photos did not upload successfully', error);
         return res.status(201).json({
             id: recipe._id,
             error,
@@ -36,7 +42,7 @@ createRecipe = async (req, res) => {
     /** Updating DB that image upload was successful */
     try { 
         if(body.images)
-            await Recipe.findOneAndUpdate({_id: recipe._id}, {hasImages: true});
+            await Recipe.findOneAndUpdate({_id: recipe._id}, {hasImages: true, imagesNames: namesArr});
     } catch (error) {
         return res.status(400).json({error, message: 'Recipe created, but theres a problem with the DB'}) //handle later
     }
@@ -101,17 +107,35 @@ getRecipeById = async (req, res) => {
 }
 
 getUserRecipes = async (req, res) => {
-    await Recipe.find({email: req.params.email}, (err, recipe) => {
-        if (err) {
-            return res.status(400).json({ success: false, error: err })
+    let recipes = null
+    try {
+        recipes = await Recipe.find({userId: req.params.userId})
+    } catch(error) {
+        console.log(error);
+        return res.status(400).json({ error: error })
+    }
+        
+    if (!recipes.length) {
+        return res.status(404).json({ error: `User have no recipes` })
+    }
+
+    /** Getting images from s3 */
+    const imagesArr = []
+    try {
+        for(let i = 0 ; i < recipes.length ; i++) {
+            if(recipes[i].hasImages) {
+                imagesArr[i] = await getFromS3(req.params.userId, 'recipes/', recipes[i])
+            } else {
+                imagesArr[i] = null
+            }
         }
-        if (!recipe.length) {
-            return res
-                .status(404)
-                .json({ success: false, error: `User have no recipes` })
-        }
-        return res.status(200).json({ success: true, data: recipe })
-    }).catch(err => console.log(err))
+        console.log('imagesArr', imagesArr);
+    } catch (error) {
+        console.log(error)
+        return res.status(400).json({ error: err })
+    }
+    // console.log('recipes', recipes);
+    return res.status(200).json({ data: {recipes, imagesArr} })
 }
 
 module.exports = {
