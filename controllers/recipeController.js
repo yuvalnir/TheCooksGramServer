@@ -129,7 +129,6 @@ getUserRecipes = async (req, res) => {
                 imagesArr[i] = null
             }
         }
-        console.log('imagesArr', imagesArr);
     } catch (error) {
         console.log(error)
         return res.status(400).json({ error: err })

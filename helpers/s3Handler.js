@@ -40,7 +40,7 @@ async function getFromS3(userId, addedPath, recipe) {
     let images = []
     for (let i = 0; i < recipe.imagesNames.length; i++) {
         const path = userId + '/' + addedPath + recipe._id + '/' + recipe.imagesNames[i]
-        console.log('path', path);
+        // console.log('path', path);
 
         let params = {
             Bucket: process.env.AWS_BUCKET_NAME,
